@@ -1,0 +1,8 @@
+<RCC>
+    <qresource prefix="/">
+        <file>main.qml</file>
+        <file>common.js</file>
+        <file>RenameWindow.qml</file>
+        <file>TableRowDelegate.qml</file>
+    </qresource>
+</RCC>
