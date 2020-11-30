@@ -18,10 +18,11 @@ Amf1k::FileWatcherModel::FileWatcherModel(QObject* parent)
       _pDirectoryWatcher(new DirectoryWatcher),
       _files({}) {
   connect(this, &FileWatcherModel::currentWatchPathChanged, this,
-          &FileWatcherModel::handleCurrentWatchPathChanged,
-          Qt::QueuedConnection);
+          &FileWatcherModel::handleCurrentWatchPathChanged);
   _pDirectoryWatcher->subscribe(std::make_shared<Subscriber<FileWatcherModel>>(
       *this, &FileWatcherModel::handleFileInfoChanged));
+  connect(this, &FileWatcherModel::newFileInfoEvenet, this,
+          &FileWatcherModel::handleNewFileInfoEvent, Qt::QueuedConnection);
 }
 
 QString Amf1k::FileWatcherModel::getCurrentWatchPath() const {
@@ -73,6 +74,22 @@ void Amf1k::FileWatcherModel::handleCurrentWatchPathChanged() {
 
 void Amf1k::FileWatcherModel::handleFileInfoChanged(FileInfo info,
                                                     FileAction action) {
+  //Глупый хак, нужно для нормальной работы с Qt EventLoop, иначе модель не
+  //обновляется нормально. Для более красивого решения нужно сделать
+  //библиотеку-враппер Qt над С++ pure библиотеки. И там разрулить эту ситуацию
+  //с коннектами и тд
+  emit newFileInfoEvenet(info, action);
+}
+
+void Amf1k::FileWatcherModel::handleFileRolesChanging(
+    const QVector<int>& changedRoles,
+    int row) {
+  auto index = createIndex(row, 0);
+  emit dataChanged(index, index, changedRoles);
+}
+
+void Amf1k::FileWatcherModel::handleNewFileInfoEvent(FileInfo info,
+                                                     FileAction action) {
   qInfo(FileWatcherModelCategory) << "File changing";
   if (action != FileAction::Create) {
     auto it = std::find_if(_files.begin(), _files.end(),
@@ -103,13 +120,6 @@ void Amf1k::FileWatcherModel::handleFileInfoChanged(FileInfo info,
     appendFileInfo(info);
     return;
   }
-}
-
-void Amf1k::FileWatcherModel::handleFileRolesChanging(
-    const QVector<int>& changedRoles,
-    int row) {
-  auto index = createIndex(row, 0);
-  emit dataChanged(index, index, changedRoles);
 }
 
 int Amf1k::FileWatcherModel::rowCount(const QModelIndex&) const {
@@ -151,9 +161,9 @@ void Amf1k::FileWatcherModel::updateFileInfo(FileInfo newInfo,
 }
 
 void Amf1k::FileWatcherModel::deleteFileInfo(QList<FileInfo>::Iterator it) {
-  beginInsertRows(QModelIndex(), toRow(it), toRow(it));
+  beginRemoveRows(QModelIndex(), toRow(it), toRow(it));
   _files.removeOne(*it);
-  endInsertRows();
+  endRemoveRows();
 }
 
 void Amf1k::FileWatcherModel::appendFileInfo(FileInfo newInfo) {

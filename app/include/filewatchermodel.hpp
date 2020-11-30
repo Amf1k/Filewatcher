@@ -36,11 +36,13 @@ class FileWatcherModel : public QAbstractListModel {
 
  signals:
   void currentWatchPathChanged();
+  void newFileInfoEvenet(fwlib::FileInfo info, fwlib::FileAction action);
 
  public slots:
   void handleCurrentWatchPathChanged();
   void handleFileInfoChanged(fwlib::FileInfo, fwlib::FileAction);
   void handleFileRolesChanging(const QVector<int>& changedRoles, int row);
+  void handleNewFileInfoEvent(fwlib::FileInfo info, fwlib::FileAction action);
 
   // QAbstractItemModel interface
  public:
@@ -63,5 +65,7 @@ class FileWatcherModel : public QAbstractListModel {
   QList<fwlib::FileInfo> _files;
 };
 }  // namespace Amf1k
+Q_DECLARE_METATYPE(fwlib::FileInfo)
+Q_DECLARE_METATYPE(fwlib::FileAction)
 
 #endif  // FILEWATCHERMODEL_HPP

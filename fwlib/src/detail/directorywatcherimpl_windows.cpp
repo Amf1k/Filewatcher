@@ -26,6 +26,7 @@ void fwlib::detail::DirectoryWatcherImpl::startWatching(std::string_view path) {
     std::array<char, 1024 * 8> buf;
     DWORD bytes_read;
     OVERLAPPED overlapped;
+    std::memset(&overlapped, 0, sizeof(overlapped));
     BOOL result = ::ReadDirectoryChangesExW(
         dir, &buf.front(), buf.size(), false,
         FILE_NOTIFY_CHANGE_FILE_NAME | FILE_NOTIFY_CHANGE_SIZE |
